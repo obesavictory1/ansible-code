@@ -1,0 +1,43 @@
+---
+- name: Deploy iPortfolio Web Application
+  hosts: qaserver
+  become: true
+
+  tasks:
+    - name: Install necessary packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - unzip
+        - wget
+        - httpd
+
+    - name: Download iPortfolio application files from GitHub
+      get_url:
+        url: https://github.com/utrains/static-resume/archive/refs/heads/main.zip
+        dest: /tmp/main.zip
+
+    - name: Extract the downloaded zip file
+      unarchive:
+        src: /tmp/main.zip
+        dest: /tmp
+
+    - name: Copy application files to Apache document root directory
+      copy:
+        src: "/tmp/static-resume-main/iPortfolio/"
+        dest: "/var/www/html/"
+        remote_src: true
+
+    - name: Start Apache HTTP server
+      service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Check if iPortfolio application is accessible
+      wait_for:
+        host: your_server_ip_or_domain
+        port: 80
+        delay: 5
+        timeout: 10
